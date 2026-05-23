@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EmailStatus {
+  PENDING
+  QUEUED
+  SENT
+  FAILED
+  RETRYING
+}
+
+model System {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  name      String
+  apiKeyHash String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mailboxes  Mailbox[]
+  emailLogs  EmailLog[]
+}
+
+model Mailbox {
+  id             String    @id @default(uuid())
+  systemId       String
+  system         System    @relation(fields: [systemId], references: [id], onDelete: Cascade)
+  email          String    @unique
+  displayName    String
+  isDefault      Boolean   @default(false)
+  active         Boolean   @default(true)
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  consentGiven   Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  emailLogs EmailLog[]
+
+  @@index([systemId])
+}
+
+model EmailLog {
+  id               String       @id @default(uuid())
+  systemId         String
+  system           System       @relation(fields: [systemId], references: [id])
+  mailboxId        String
+  mailbox          Mailbox      @relation(fields: [mailboxId], references: [id])
+  from             String
+  to               Json
+  cc               Json?
+  bcc              Json?
+  subject          String
+  htmlBody         String
+  attachments      Json?
+  status           EmailStatus  @default(QUEUED)
+  provider         String       @default("MICROSOFT_GRAPH")
+  providerResponse String?
+  errorMessage     String?
+  attempts         Int          @default(0)
+  sentAt           DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([systemId])
+  @@index([mailboxId])
+  @@index([status])
+}
