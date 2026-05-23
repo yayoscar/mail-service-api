@@ -28,8 +28,8 @@ Mail Service API es un gateway de envío de correos donde cada sistema instituci
 ## Instalación
 
 ```bash
-git clone <repo-url>
-cd correos
+git clone https://github.com/yayoscar/mail-service-api.git
+cd mail-service-api
 npm install
 ```
 
@@ -47,7 +47,7 @@ cp .env.example .env
 | `DATABASE_URL` | Connection string de PostgreSQL |
 | `REDIS_HOST` | Host de Redis |
 | `REDIS_PORT` | Puerto de Redis |
-| `AZURE_TENANT_ID` | Tenant ID de Azure AD |
+| `AZURE_TENANT_ID` | Tenant ID de Azure AD (usado internamente, el flujo OAuth2 usa `common` para multi-tenant) |
 | `AZURE_CLIENT_ID` | Client ID del App Registration |
 | `AZURE_CLIENT_SECRET` | Client secret del App Registration |
 | `REDIRECT_URI` | URI de callback OAuth2 (default: `http://localhost:3002/auth/callback`) |
@@ -135,15 +135,28 @@ http://localhost:3002/auth/consent?mailboxId={mailboxId}
 
 Esto redirigirá a Microsoft para que el usuario inicie sesión y conceda permiso delegado de `Mail.Send`. Al completarse, los tokens se almacenan automáticamente y se refrescan cuando expiran.
 
-### 4. Enviar un correo con adjuntos
+### 4. Enviar un correo
 
 ```bash
 curl -X POST http://localhost:3002/emails/send \
   -H "x-api-key: sk-xxxx..." \
   -F "from=controlgestion@dgeti.gob.mx" \
-  -F 'to=["usuario@correo.com"]' \
+  -F "to=usuario@correo.com" \
   -F "subject=Bienvenida" \
-  -F "html=<h1>Hola</h1><p>Bienvenido al sistema</p>" \
+  -F "html=<h1>Hola</h1><p>Bienvenido al sistema</p>"
+```
+
+El campo `to` acepta un email individual o un JSON array para múltiples destinatarios: `'["uno@correo.com","dos@correo.com"]'`.
+
+Para enviar con archivos adjuntos:
+
+```bash
+curl -X POST http://localhost:3002/emails/send \
+  -H "x-api-key: sk-xxxx..." \
+  -F "from=controlgestion@dgeti.gob.mx" \
+  -F "to=usuario@correo.com" \
+  -F "subject=Documento adjunto" \
+  -F "html=<p>Adjunto el documento</p>" \
   -F "attachments=@/path/to/documento.pdf"
 ```
 
@@ -170,17 +183,20 @@ curl "http://localhost:3002/audit/email-logs?page=1&limit=20" \
 
 ### Modelo de permisos delegados
 
-Esta API utiliza **permisos delegados** de Microsoft Graph. Cada buzón debe completar un flujo de consentimiento OAuth2 individual donde el usuario propietario del buzón autoriza el envío de correos en su nombre. Los tokens de acceso y refresco se almacenan de forma segura en la base de datos y se renuevan automáticamente.
+Esta API utiliza **permisos delegados** de Microsoft Graph con soporte **multi-tenant**. Cada buzón debe completar un flujo de consentimiento OAuth2 individual donde el usuario propietario del buzón autoriza el envío de correos en su nombre. Los tokens de acceso y refresco se almacenan de forma segura en la base de datos y se renuevan automáticamente.
+
+El App Registration debe configurarse como **multi-tenant** ("Cualquier inquilino de Entra ID + cuentas personales de Microsoft") en Azure Portal.
 
 ### Pasos para configurar Azure AD
 
 1. Ir a **Azure Portal > Azure Active Directory > App registrations**
 2. Crear un nuevo registro de aplicación
-3. En **Authentication**, agregar la **Redirect URI** (ej: `http://localhost:3002/auth/callback`)
-4. En **API Permissions**, agregar **Microsoft Graph > Delegated Permissions > Mail.Send** y **offline_access**
-5. Si el tenant tiene consentimiento de usuario deshabilitado, un administrador debe conceder **admin consent**
-6. En **Certificates & secrets**, crear un nuevo client secret
-7. Usar el **Tenant ID**, **Client ID** y **Client Secret** en el `.env`
+3. En **Supported account types**, seleccionar **"Cualquier inquilino de Entra ID + cuentas personales de Microsoft"** (multi-tenant)
+4. En **Authentication**, agregar la **Redirect URI** tipo Web (ej: `http://localhost:3002/auth/callback`)
+5. En **API Permissions**, agregar **Microsoft Graph > Delegated Permissions > Mail.Send** y **offline_access**
+6. Si el tenant tiene consentimiento de usuario deshabilitado, un administrador debe conceder **admin consent**
+7. En **Certificates & secrets**, crear un nuevo client secret
+8. Usar el **Tenant ID**, **Client ID** y **Client Secret** en el `.env`
 
 ### Flujo de consentimiento
 
@@ -227,6 +243,13 @@ src/
     queue/           # BullMQ processor
     audit/           # Consulta de EmailLog
 ```
+
+## Autenticación
+
+| Header | Uso |
+|--------|-----|
+| `x-admin-api-key` | Endpoints administrativos (sistemas, buzones, auditoría) |
+| `x-api-key` | Endpoint de envío de correos (proporcionado al crear un sistema) |
 
 ## Licencia
 
