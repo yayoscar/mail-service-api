@@ -15,6 +15,7 @@ import { EmailsService } from './emails.service';
 import { SendEmailDto } from './dto/send-email.dto';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { RequireApiKey } from '../../common/decorators/api-key.decorator';
+import { CleanupUploadsOnErrorInterceptor } from '../../common/interceptors/cleanup-uploads-on-error.interceptor';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 
@@ -36,6 +37,7 @@ export class EmailsController {
         fileSize: 26214400,
       },
     }),
+    CleanupUploadsOnErrorInterceptor,
   )
   @HttpCode(HttpStatus.OK)
   @ApiConsumes('multipart/form-data')

@@ -2,14 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
+  // Honor X-Forwarded-* only from a reverse proxy on this host or the private network,
+  // so req.secure (cookie Secure flag) and req.ip (login rate limit) are correct behind nginx
+  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+  app.use(cookieParser());
   app.enableCors();
 
   app.useGlobalPipes(

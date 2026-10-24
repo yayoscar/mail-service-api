@@ -4,6 +4,7 @@ import { MailboxesService } from '../mailboxes/mailboxes.service';
 import { SendEmailDto } from './dto/send-email.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { normalizeAttachmentName } from '../queue/attachment.utils';
 
 @Injectable()
 export class EmailsService {
@@ -31,7 +32,7 @@ export class EmailsService {
     }
 
     const attachmentsMeta = files.map((f) => ({
-      name: f.originalname,
+      name: normalizeAttachmentName(f.originalname),
       contentType: f.mimetype,
       size: f.size,
       path: f.path,
@@ -52,10 +53,23 @@ export class EmailsService {
       },
     });
 
-    await this.emailQueue.add('email-send', {
-      emailLogId: emailLog.id,
-      attachmentPaths: files.map((f) => f.path),
-    });
+    try {
+      await this.emailQueue.add('email-send', {
+        emailLogId: emailLog.id,
+        attachmentPaths: files.map((f) => f.path),
+      });
+    } catch (error: unknown) {
+      // The request is rejected, so the log must not stay QUEUED forever
+      const reason = error instanceof Error ? error.message : String(error);
+      await this.prisma.emailLog.update({
+        where: { id: emailLog.id },
+        data: {
+          status: 'FAILED',
+          errorMessage: `Error al encolar el correo: ${reason}`.substring(0, 1000),
+        },
+      });
+      throw error;
+    }
 
     return {
       message: 'Correo encolado correctamente',

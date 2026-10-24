@@ -3,7 +3,7 @@ import { Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { GraphMailService } from '../graph/graph-mail.service';
-import { cleanupFiles, filesToBase64 } from './attachment.utils';
+import { cleanupFiles, loadAttachments, resolveStoredAttachments } from './attachment.utils';
 
 @Injectable()
 @Processor('email-send')
@@ -39,12 +39,11 @@ export class EmailProcessor extends WorkerHost {
       },
     });
 
-    try {
-      let attachments: Array<{ name: string; contentType: string; contentBytes: string }> = [];
+    const storedAttachments = resolveStoredAttachments(emailLog.attachments, attachmentPaths);
+    const attachmentFiles = storedAttachments.map((att) => att.path);
 
-      if (attachmentPaths?.length > 0) {
-        attachments = await filesToBase64(attachmentPaths);
-      }
+    try {
+      const attachments = await loadAttachments(storedAttachments);
 
       const result = await this.graphMailService.sendMail({
         from: emailLog.from,
@@ -66,8 +65,8 @@ export class EmailProcessor extends WorkerHost {
         },
       });
 
-      if (attachmentPaths?.length > 0) {
-        await cleanupFiles(attachmentPaths);
+      if (attachmentFiles.length > 0) {
+        await cleanupFiles(attachmentFiles);
       }
 
       this.logger.log(`Email ${emailLogId} enviado exitosamente`);
@@ -90,8 +89,8 @@ export class EmailProcessor extends WorkerHost {
         },
       });
 
-      if (attachmentPaths?.length > 0) {
-        await cleanupFiles(attachmentPaths);
+      if (attachmentFiles.length > 0) {
+        await cleanupFiles(attachmentFiles);
       }
     }
   }

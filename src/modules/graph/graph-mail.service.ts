@@ -59,8 +59,6 @@ export class GraphMailService {
 
     const graphUrl = 'https://graph.microsoft.com/v1.0/me/sendMail';
 
-    this.logger.debug(`Token prefix: ${token.substring(0, 20)}...`);
-
     const response = await fetch(graphUrl, {
       method: 'POST',
       headers: {

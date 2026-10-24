@@ -28,6 +28,8 @@ export const multerConfig = MulterModule.registerAsync({
 
     return {
       storage,
+      // Decode filenames as UTF-8 so names like "Pérez.pdf" are not mangled (multer defaults to latin1)
+      defParamCharset: 'utf8',
       limits: {
         fileSize: maxAttachmentSize,
       },

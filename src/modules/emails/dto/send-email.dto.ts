@@ -7,8 +7,9 @@ function parseJsonEmails(value: string): string[] {
   if (!value) return [];
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // Accept single email without array wrapping
-  if (emailRegex.test(value)) return [value];
+  // Accept single email without array wrapping. JSON arrays are checked first because
+  // the regex also matches a one-element array like ["user@correo.com"].
+  if (!value.trim().startsWith('[') && emailRegex.test(value)) return [value];
 
   try {
     const parsed = JSON.parse(value);
@@ -36,16 +37,18 @@ export class SendEmailDto {
   @IsEmail({}, { each: true })
   to: string[];
 
-  @ApiPropertyOptional({ description: 'JSON array de copia', example: '["copia@correo.com"]' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Copia: email individual o JSON array', example: '["copia@correo.com"]' })
   @IsOptional()
   @Transform(({ value }: { value: string }) => (value ? parseJsonEmails(value) : undefined))
+  @IsArray()
+  @IsEmail({}, { each: true })
   cc?: string[];
 
-  @ApiPropertyOptional({ description: 'JSON array de copia oculta', example: '["oculta@correo.com"]' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Copia oculta: email individual o JSON array', example: '["oculta@correo.com"]' })
   @IsOptional()
   @Transform(({ value }: { value: string }) => (value ? parseJsonEmails(value) : undefined))
+  @IsArray()
+  @IsEmail({}, { each: true })
   bcc?: string[];
 
   @ApiProperty({ description: 'Asunto del correo' })

@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiSecurity } from '@nestjs/swagger
 import { MailboxesService } from './mailboxes.service';
 import { CreateMailboxDto } from './dto/create-mailbox.dto';
 import { UpdateMailboxDto } from './dto/update-mailbox.dto';
+import { QueryMailboxesDto } from './dto/query-mailboxes.dto';
 import { RequireAdmin } from '../../common/decorators/admin.decorator';
 
 @ApiTags('Mailboxes')
@@ -35,9 +37,9 @@ export class MailboxesController {
   @Get('systems/:systemId/mailboxes')
   @RequireAdmin()
   @ApiOperation({ summary: 'Listar buzones de un sistema' })
-  @ApiResponse({ status: 200, description: 'Lista de buzones activos' })
-  findBySystem(@Param('systemId') systemId: string) {
-    return this.mailboxesService.findBySystem(systemId);
+  @ApiResponse({ status: 200, description: 'Lista de buzones (solo activos, salvo includeInactive=true)' })
+  findBySystem(@Param('systemId') systemId: string, @Query() query: QueryMailboxesDto) {
+    return this.mailboxesService.findBySystem(systemId, query.includeInactive ?? false);
   }
 
   @Patch('mailboxes/:id')

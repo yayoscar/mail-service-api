@@ -43,9 +43,23 @@ model Mailbox {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  emailLogs EmailLog[]
+  emailLogs       EmailLog[]
+  consentRequests ConsentRequest[]
 
   @@index([systemId])
+}
+
+model ConsentRequest {
+  id        String    @id @default(uuid())
+  mailboxId String
+  mailbox   Mailbox   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  state     String?   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([mailboxId])
 }
 
 model EmailLog {

@@ -8,6 +8,8 @@ import { PrismaService } from '../../config/prisma.service';
 import { CreateMailboxDto } from './dto/create-mailbox.dto';
 import { UpdateMailboxDto } from './dto/update-mailbox.dto';
 
+const DEFAULT_DEACTIVATION_ERROR = 'No se puede desactivar el buzón por defecto del sistema';
+
 @Injectable()
 export class MailboxesService {
   constructor(private prisma: PrismaService) {}
@@ -42,9 +44,9 @@ export class MailboxesService {
     });
   }
 
-  async findBySystem(systemId: string) {
+  async findBySystem(systemId: string, includeInactive = false) {
     return this.prisma.mailbox.findMany({
-      where: { systemId, active: true },
+      where: includeInactive ? { systemId } : { systemId, active: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -56,7 +58,11 @@ export class MailboxesService {
   }
 
   async update(id: string, dto: UpdateMailboxDto) {
-    await this.findOne(id);
+    const mailbox = await this.findOne(id);
+
+    if (dto.active === false && mailbox.isDefault) {
+      throw new BadRequestException(DEFAULT_DEACTIVATION_ERROR);
+    }
 
     if (dto.email) {
       const existing = await this.prisma.mailbox.findUnique({ where: { email: dto.email } });
@@ -65,16 +71,34 @@ export class MailboxesService {
       }
     }
 
-    return this.prisma.mailbox.update({
-      where: { id },
-      data: dto,
+    const emailChanged =
+      dto.email !== undefined && dto.email.toLowerCase() !== mailbox.email.toLowerCase();
+
+    if (!emailChanged) {
+      return this.prisma.mailbox.update({ where: { id }, data: dto });
+    }
+
+    // The stored tokens belong to the previous account, so the consent is revoked
+    return this.prisma.$transaction(async (tx) => {
+      await tx.consentRequest.deleteMany({ where: { mailboxId: id, usedAt: null } });
+
+      return tx.mailbox.update({
+        where: { id },
+        data: {
+          ...dto,
+          accessToken: null,
+          refreshToken: null,
+          tokenExpiresAt: null,
+          consentGiven: false,
+        },
+      });
     });
   }
 
   async deactivate(id: string) {
     const mailbox = await this.findOne(id);
     if (mailbox.isDefault) {
-      throw new BadRequestException('No se puede desactivar el buzón por defecto del sistema');
+      throw new BadRequestException(DEFAULT_DEACTIVATION_ERROR);
     }
     return this.prisma.mailbox.update({
       where: { id },
