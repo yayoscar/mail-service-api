@@ -1,0 +1,49 @@
+schema: spec-driven
+
+context: |
+  Dominio: gateway centralizado de envío de correos institucionales (DGETI). Cada sistema
+  consumidor se autentica con su API key y solo puede enviar desde buzones Microsoft 365
+  autorizados para él. No recibe correo, no gestiona plantillas, no tiene frontend.
+  Stack: NestJS 11 (TypeScript strict), PostgreSQL 16 + Prisma 7 (adapter pg, cliente en
+  generated/prisma), Redis 7 + BullMQ (cola email-send), Multer (multipart, disco temporal),
+  Swagger en /docs, class-validator/class-transformer.
+  Integración Microsoft Graph: permisos DELEGADOS (Mail.Send + offline_access) por buzón,
+  flujo OAuth2 Authorization Code multi-tenant (endpoint /common), envío vía /me/sendMail.
+  El PRD original de Clavix habla de Client Credentials; está obsoleto en ese punto.
+  Convenciones: mensajes de API y logs en español; respuestas envueltas en
+  { success, data }; errores { statusCode, message, timestamp, path }; endpoints admin con
+  x-admin-api-key, envío con x-api-key; contenedores con Podman Compose (nunca Docker).
+  Producción: el servicio corre como daemon de systemd (no PM2) y ya tiene su .env;
+  los cambios de despliegue se documentan en docs/ACTUALIZACION-PRODUCCION.md.
+  Specs en español usando las palabras clave SHALL/MUST.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
