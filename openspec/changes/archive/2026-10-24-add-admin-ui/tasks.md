@@ -54,6 +54,6 @@
 
 ## 9. Verificación y documentación
 
-- [ ] 9.1 Revisar en el navegador que ni `localStorage`, ni `sessionStorage`, ni las cookies legibles por JavaScript contengan credenciales tras crear un sistema y rotar su clave
-- [ ] 9.2 Prueba manual completa: login, alta de sistema, alta de buzón, enlace de consentimiento, autorización, rotación de clave, desactivación y reactivación, cierre de sesión y sesión caducada
+- [x] 9.1 Revisar en el navegador que ni `localStorage`, ni `sessionStorage`, ni las cookies legibles por JavaScript contengan credenciales tras crear un sistema y rotar su clave
+- [x] 9.2 Prueba manual completa: login, alta de sistema, alta de buzón, enlace de consentimiento, autorización, rotación de clave, desactivación y reactivación, cierre de sesión y sesión caducada
 - [x] 9.3 Documentar en el README la interfaz `/admin`, las variables nuevas, `npm run admin:hash`, cómo escapar `$` fuera de `.env`, `dev:admin` y el ajuste de `trust proxy`

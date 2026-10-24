@@ -26,5 +26,5 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Prueba manual contra un buzón real: enviar con `cc`, `bcc` y un adjunto `Constancia_Pérez_Muñoz.pdf`, y confirmar el nombre y el tipo en el correo recibido
+- [x] 5.1 Prueba manual contra un buzón real: enviar con `cc`, `bcc` y un adjunto `Constancia_Pérez_Muñoz.pdf`, y confirmar el nombre y el tipo en el correo recibido
 - [x] 5.2 Agregar al README ejemplos de envío con `cc`/`bcc`

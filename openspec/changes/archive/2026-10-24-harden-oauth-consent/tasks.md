@@ -41,5 +41,5 @@
 
 - [x] 8.1 Pruebas del flujo de consentimiento: enlace vigente, caducado, usado, reemplazado por uno nuevo, sin token y con `mailboxId`; `state` desconocido o reutilizado; cuenta distinta; diferencia solo en mayúsculas; `error_description` con HTML; buzón desactivado tras emitir el enlace
 - [x] 8.2 Prueba de que cambiar el email revoca el consentimiento y cambiar solo `displayName` no lo hace
-- [ ] 8.3 Prueba manual de punta a punta contra un tenant real: emitir enlace, consentir con la cuenta correcta, consentir con otra cuenta, enviar un correo y confirmar que los tokens están cifrados en la base de datos
+- [x] 8.3 Prueba manual de punta a punta contra un tenant real: emitir enlace, consentir con la cuenta correcta, consentir con otra cuenta, enviar un correo y confirmar que los tokens están cifrados en la base de datos
 - [x] 8.4 Actualizar el paso 3 ("Autorizar el buzón") del README con el nuevo flujo de enlaces
